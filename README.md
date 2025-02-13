@@ -1,8 +1,17 @@
 # canonical_splice_analyzer
 Runs CpliceAI on all protein coding canonical splice sites
-
-Requires CpliceAI and HTSLIB.
+Requires CpliceAI and HTSLIB. Build using CMake:
 
 ```
-Run as: ./canonical_splice_analyzer <spliceai_model_dir> <human_fa> <gff> <out.tsv>
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cd ..
+cmake --build build
+```
+
+
+Run as:
+```
+./canonical_splice_analyzer <spliceai_model_dir> <human_fa> <gff> <out.tsv>
 ```
