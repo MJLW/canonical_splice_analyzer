@@ -82,7 +82,7 @@ SpliceSites get_splice_sites_from_gff(const gff_t *gff) {
 
         // Only want things located on chromosomes
         if (strncmp(chr, "chr", 3) != 0) continue; // WARN: This is based on RUMC GFF files, they may not always be prefixed with chr
-        if (sites.n + 2 >= sites.m) sites.a = reallocarray(sites.a, sites.m *= 2, sizeof(SpliceSite));
+        if (sites.n + 2 >= sites.m) sites.a = realloc(sites.a, (sites.m *= 2) * sizeof(SpliceSite));
 
         // Extract stuff from pointers, no practical benefit, just looks a bit cleaner
         const char *gene_name = tr->gene->name;
