@@ -13,5 +13,5 @@ cmake --build build
 
 Run as:
 ```
-./canonical_splice_analyzer <spliceai_model_dir> <human_fa> <gff> <out.tsv>
+./build/canonical_splice_analyzer <spliceai_model_dir> <human_fa> <gff> <out.tsv>
 ```
