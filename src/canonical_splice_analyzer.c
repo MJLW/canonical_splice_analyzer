@@ -20,7 +20,7 @@
 
 #define SPLICEAI_CONTEXT_PADDING 5000
 
-#define HEADER_STRING "chr\tpos\tgene\tstrand\ttype\tneither\tacceptor\tdonor\n"
+#define HEADER_STRING "chr\tpos\tgene\ttid\tstrand\ttype\tneither\tacceptor\tdonor\n"
 
 typedef enum {
     ACCEPTOR = ACCEPTOR_POS,
@@ -36,6 +36,7 @@ typedef struct {
     const char *gene_name;
     uint64_t gene_beg;
     uint64_t gene_end;
+    uint32_t tid;
     int strand;
 
     uint32_t predicted;
@@ -47,8 +48,8 @@ typedef struct {
     SpliceSite *a;
 } SpliceSites;
 
-SpliceSite init_splice_site(const char *chr, const uint32_t rid, const uint64_t pos, const SpliceSiteType type, const char *gene_name, const uint64_t beg, const uint64_t end, const int strand) {
-    return (SpliceSite) { chr, rid, pos, type, gene_name, beg, end, strand, 0};
+SpliceSite init_splice_site(const char *chr, const uint32_t rid, const uint64_t pos, const SpliceSiteType type, const char *gene_name, const uint64_t beg, const uint64_t end, const uint32_t tid, const int strand) {
+    return (SpliceSite) { chr, rid, pos, type, gene_name, beg, end, tid, strand, 0};
 }
 
 void splice_sites_init(const uint32_t m, SpliceSites *sites) {
@@ -87,6 +88,7 @@ SpliceSites get_splice_sites_from_gff(const gff_t *gff) {
         // Extract stuff from pointers, no practical benefit, just looks a bit cleaner
         const char *gene_name = tr->gene->name;
         const uint64_t tr_beg = tr->gene->beg, tr_end = tr->gene->end;
+        const uint32_t tid = tr->id;
         const int strand = tr->strand;
 
         for (int i = 0; i < tr->ncds; i++) {
@@ -95,11 +97,11 @@ SpliceSites get_splice_sites_from_gff(const gff_t *gff) {
             const uint64_t cds_end = cds->beg + cds->len - 1; // Offset by -1 to get closed end coordinate
 
             if (tr->strand == STRAND_FWD) {
-                if (i != 0) sites.a[sites.n++] = init_splice_site(chr, rid, cds_beg, ACCEPTOR, gene_name, tr_beg, tr_end, strand); // As long as its not the first exon
-                if (i != tr->ncds-1) sites.a[sites.n++] = init_splice_site(chr, rid, cds_end, DONOR, gene_name, tr_beg, tr_end, strand); // As long as its not the last exon
+                if (i != 0) sites.a[sites.n++] = init_splice_site(chr, rid, cds_beg, ACCEPTOR, gene_name, tr_beg, tr_end, tid, strand); // As long as its not the first exon
+                if (i != tr->ncds-1) sites.a[sites.n++] = init_splice_site(chr, rid, cds_end, DONOR, gene_name, tr_beg, tr_end, tid, strand); // As long as its not the last exon
             } else if (tr->strand == STRAND_REV) {
-                if (i != 0) sites.a[sites.n++] = init_splice_site(chr, rid, cds_beg, DONOR, gene_name, tr_beg, tr_end, strand); // As long as its not the last exon (approaches from 3' -> 5')
-                if (i != tr->ncds-1) sites.a[sites.n++] = init_splice_site(chr, rid, cds_end, ACCEPTOR, gene_name, tr_beg, tr_end, strand); // As long as its not the first exon (approaches from 3' -> 5')
+                if (i != 0) sites.a[sites.n++] = init_splice_site(chr, rid, cds_beg, DONOR, gene_name, tr_beg, tr_end, tid, strand); // As long as its not the last exon (approaches from 3' -> 5')
+                if (i != tr->ncds-1) sites.a[sites.n++] = init_splice_site(chr, rid, cds_end, ACCEPTOR, gene_name, tr_beg, tr_end, tid, strand); // As long as its not the first exon (approaches from 3' -> 5')
             }
         }
     }
@@ -120,6 +122,8 @@ void parse_output_line(SpliceSite site, kstring_t *s) {
     kputl(site.pos, s);
     kputc('\t', s);
     kputs(site.gene_name, s);
+    kputc('\t', s);
+    kputw(site.tid, s);
     kputc('\t', s);
     kputs(site.strand == STRAND_FWD ? "fwd" : "rev", s);
     kputc('\t', s);
@@ -154,7 +158,7 @@ int main(int argc, char *argv[]) {
     FILE *out = fopen(argv[4], "w");
     fprintf(out, HEADER_STRING);
 
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < sites.n; i++) {
         SpliceSite site = sites.a[i];
 
         // Fetch sequence for gene
