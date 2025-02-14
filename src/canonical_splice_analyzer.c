@@ -119,7 +119,7 @@ gff_t *read_gff(const char *gff_path) {
 void parse_output_line(SpliceSite site, kstring_t *s) {
     kputs(site.chr, s);
     kputc('\t', s);
-    kputl(site.pos, s);
+    kputl(site.pos+1, s);
     kputc('\t', s);
     kputs(site.gene_name, s);
     kputc('\t', s);
